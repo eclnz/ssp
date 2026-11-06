@@ -5,20 +5,20 @@ from __future__ import annotations
 import warnings
 
 from .ast import BinaryExpr, Expr, Op, Term, UnaryExpr
-from .tokenizer import _Paren, _Token, _tokenize
+from .tokenizer import Paren, Token, tokenize
 
 
 class ImplicitAndWarning(UserWarning):
     """Raised when adjacent terms are implicitly AND-ed (no operator between them)."""
 
 
-def _parse(tokens: list[_Token]) -> Expr:
+def _parse(tokens: list[Token]) -> Expr:
     pos = 0
 
-    def peek() -> _Token | None:
+    def peek() -> Token | None:
         return tokens[pos] if pos < len(tokens) else None
 
-    def consume() -> _Token:
+    def consume() -> Token:
         nonlocal pos
         t = tokens[pos]
         pos += 1
@@ -36,7 +36,7 @@ def _parse(tokens: list[_Token]) -> Expr:
         while True:
             if peek() is Op.AND:
                 consume()
-            elif isinstance(peek(), Term) or peek() in (_Paren.OPEN, Op.NOT):
+            elif isinstance(peek(), Term) or peek() in (Paren.OPEN, Op.NOT):
                 warnings.warn(
                     "Adjacent terms without operator — treating as AND (PubMed behaviour)",
                     ImplicitAndWarning,
@@ -55,10 +55,10 @@ def _parse(tokens: list[_Token]) -> Expr:
 
     def parse_atom() -> Expr:
         t = peek()
-        if t is _Paren.OPEN:
+        if t is Paren.OPEN:
             consume()
             expr = parse_or()
-            if peek() is _Paren.CLOSE:
+            if peek() is Paren.CLOSE:
                 consume()
             return expr
         t = consume()
@@ -70,4 +70,4 @@ def _parse(tokens: list[_Token]) -> Expr:
 
 
 def parse(string: str) -> Expr:
-    return _parse(_tokenize(string))
+    return _parse(tokenize(string))

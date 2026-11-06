@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections import Counter
 
 from ..syntax.ast import BinaryExpr, Expr, Op, Term, UnaryExpr
-from ..syntax.traversal import _collect_and_terms, _collect_or_branches
-from .phrases import _branch_subsumes, _is_subphrase
+from ..syntax.traversal import collect_and_terms, collect_or_branches
+from .phrases import branch_subsumes, is_subphrase
 
 
 def find_and_redundancies(expr: Expr) -> list[tuple[str, str]]:
@@ -20,9 +20,9 @@ def find_and_redundancies(expr: Expr) -> list[tuple[str, str]]:
     def walk(e: Expr) -> None:
         if isinstance(e, BinaryExpr):
             if e.op == Op.AND:
-                for lt in _collect_and_terms(e.left):
-                    for rt in _collect_and_terms(e.right):
-                        pair = (lt, rt) if _is_subphrase(lt, rt) else (rt, lt) if _is_subphrase(rt, lt) else None
+                for lt in collect_and_terms(e.left):
+                    for rt in collect_and_terms(e.right):
+                        pair = (lt, rt) if is_subphrase(lt, rt) else (rt, lt) if is_subphrase(rt, lt) else None
                         if pair and pair not in seen:
                             seen.add(pair)
                             results.append(pair)
@@ -47,12 +47,12 @@ def find_absorbed_branches(expr: Expr) -> list[tuple[str, set[str]]]:
     def walk(e: Expr) -> None:
         if isinstance(e, BinaryExpr):
             if e.op == Op.OR:
-                branches = _collect_or_branches(e)
+                branches = collect_or_branches(e)
                 or_terms = [b.value.lower().strip('"') for b in branches if isinstance(b, Term)]
-                and_branches = [_collect_and_terms(b) for b in branches if isinstance(b, BinaryExpr) and b.op == Op.AND]
+                and_branches = [collect_and_terms(b) for b in branches if isinstance(b, BinaryExpr) and b.op == Op.AND]
                 for t in or_terms:
                     for and_terms in and_branches:
-                        if and_terms and any(t == at or _is_subphrase(t, at) for at in and_terms):
+                        if and_terms and any(t == at or is_subphrase(t, at) for at in and_terms):
                             key = (t, frozenset(and_terms))
                             if key not in seen:
                                 seen.add(key)
@@ -100,11 +100,11 @@ def find_subsumed_branches(expr: Expr) -> list[tuple[set[str], set[str]]]:
     def walk(e: Expr) -> None:
         if isinstance(e, BinaryExpr):
             if e.op == Op.OR:
-                branch_terms = [_collect_and_terms(b) for b in _collect_or_branches(e)]
+                branch_terms = [collect_and_terms(b) for b in collect_or_branches(e)]
                 pure = [t for t in branch_terms if t]
                 for i, t1 in enumerate(pure):
                     for j, t2 in enumerate(pure):
-                        if i != j and _branch_subsumes(t1, t2):
+                        if i != j and branch_subsumes(t1, t2):
                             key = (frozenset(t1), frozenset(t2))
                             if key not in seen:
                                 seen.add(key)
@@ -128,8 +128,8 @@ def find_subsumed_terms(terms: set[str]) -> list[tuple[str, str]]:
     pairs: list[tuple[str, str]] = []
     for i, a in enumerate(term_list):
         for b in term_list[i + 1 :]:
-            if _is_subphrase(a, b):
+            if is_subphrase(a, b):
                 pairs.append((a, b))
-            elif _is_subphrase(b, a):
+            elif is_subphrase(b, a):
                 pairs.append((b, a))
     return pairs

@@ -70,7 +70,7 @@ src/string_parser/
 
 `syntax` is the foundation and has no dependencies on higher-level packages. `analysis` inspects syntax trees. `transformations` uses syntax and lexical analysis to produce normalized or simplified trees. `presentation` consumes those results to display trees and diffs. Query serialization belongs to `syntax`, so transformations do not depend on terminal formatting.
 
-Tests mirror these four package folders. Internal modules import their dependencies directly; callers can continue using `from string_parser import parse` and the other existing public imports.
+Tests mirror these four package folders. Functions and types shared across modules use public names (for example, `tokenize`, `Token`, and `collect_and_terms`). Leading underscores mark helpers used only within their defining module. Internal modules import their dependencies directly; callers can continue using `from string_parser import parse` and the other existing public imports.
 
 ## Provenance
 

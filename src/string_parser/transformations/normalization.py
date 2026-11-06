@@ -5,7 +5,7 @@ from __future__ import annotations
 from ..syntax.ast import Expr, Op, Term, UnaryExpr
 from ..syntax.parser import parse
 from ..syntax.serialization import unparse
-from ..syntax.traversal import _collect_and_exprs, _collect_or_branches, _rebuild_binary
+from ..syntax.traversal import collect_and_exprs, collect_or_branches, rebuild_binary
 
 
 def canonical_form(string: str) -> str:
@@ -29,9 +29,9 @@ def canonicalize(expr: Expr) -> Expr:
     if isinstance(expr, UnaryExpr):
         return UnaryExpr(expr.op, canonicalize(expr.operand))
     if expr.op == Op.OR:
-        branches = sorted([canonicalize(b) for b in _collect_or_branches(expr)], key=unparse)
-        return _rebuild_binary(Op.OR, branches)
+        branches = sorted([canonicalize(b) for b in collect_or_branches(expr)], key=unparse)
+        return rebuild_binary(Op.OR, branches)
     if expr.op == Op.AND:
-        operands = sorted([canonicalize(e) for e in _collect_and_exprs(expr)], key=unparse)
-        return _rebuild_binary(Op.AND, operands)
+        operands = sorted([canonicalize(e) for e in collect_and_exprs(expr)], key=unparse)
+        return rebuild_binary(Op.AND, operands)
     return expr

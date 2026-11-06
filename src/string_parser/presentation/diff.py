@@ -8,7 +8,7 @@ from enum import StrEnum
 from ..syntax.ast import BinaryExpr, Expr, Op
 from ..syntax.parser import parse
 from ..syntax.serialization import unparse
-from ..syntax.traversal import _collect_and_exprs, _collect_and_terms, _collect_or_branches
+from ..syntax.traversal import collect_and_exprs, collect_and_terms, collect_or_branches
 from ..transformations.normalization import canonicalize
 from ..transformations.simplification import simplify
 
@@ -20,10 +20,10 @@ class Colour(StrEnum):
 
 
 def _colour_branches(expr: Expr, highlight: set[frozenset[str]], colour: Colour) -> str:
-    branches = _collect_or_branches(expr)
+    branches = collect_or_branches(expr)
     result = ""
     for i, b in enumerate(branches):
-        t = frozenset(_collect_and_terms(b))
+        t = frozenset(collect_and_terms(b))
         s = unparse(b)
         sep = " OR " if i > 0 else ""
         if t and t in highlight:
@@ -39,8 +39,8 @@ def format_simplification_diff(string: str) -> str | None:
     simp_expr = simplify(orig_expr)
     if unparse(simp_expr) == unparse(orig_expr):
         return None
-    simp_terms = {frozenset(_collect_and_terms(b)) for b in _collect_or_branches(simp_expr)}
-    orig_terms = {frozenset(_collect_and_terms(b)) for b in _collect_or_branches(orig_expr)}
+    simp_terms = {frozenset(collect_and_terms(b)) for b in collect_or_branches(simp_expr)}
+    orig_terms = {frozenset(collect_and_terms(b)) for b in collect_or_branches(orig_expr)}
     removed = orig_terms - simp_terms
     return _colour_branches(orig_expr, removed, Colour.RED)
 
@@ -81,8 +81,8 @@ def _tree_aware_diff(old: Expr, new: Expr) -> tuple[str, str]:
         op = new.op
 
     if op is not None:
-        old_branches = _collect_or_branches(old) if op == Op.OR else _collect_and_exprs(old)
-        new_branches = _collect_or_branches(new) if op == Op.OR else _collect_and_exprs(new)
+        old_branches = collect_or_branches(old) if op == Op.OR else collect_and_exprs(old)
+        new_branches = collect_or_branches(new) if op == Op.OR else collect_and_exprs(new)
         old_keys = [unparse(b) for b in old_branches]
         new_keys = [unparse(b) for b in new_branches]
         sep = f" {op.value} "
