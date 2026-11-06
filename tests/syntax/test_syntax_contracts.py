@@ -26,7 +26,7 @@ def test_error_and_token_offsets():
 def test_ast_is_immutable_and_rejects_wrong_operator_arity():
     term = Term("A")
     with pytest.raises(FrozenInstanceError):
-        term.value = "B"
+        term.value = "B"  # pyright: ignore[reportAttributeAccessIssue] - intentional mutation attempt
     with pytest.raises(ValueError):
         BinaryExpr(Op.NOT, term, term)
     with pytest.raises(ValueError):

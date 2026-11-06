@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from itertools import product
 
-from ..syntax.expressions import BinaryExpr, Expr, Op, Term, UnaryExpr, structural_key
+from ..syntax.expressions import BinaryExpr, Expr, Op, Term, UnaryExpr, canonical_key
 from .terms import TermChanges, collect_terms, compare_terms
 
 Path = tuple[str, ...]
@@ -61,7 +61,7 @@ def structural_edits(before: Expr, after: Expr, path: Path = ()) -> tuple[Edit, 
     """
     if before == after:
         return ()
-    if structural_key(before) == structural_key(after):
+    if canonical_key(before) == canonical_key(after):
         return (Edit(path, EditKind.REARRANGE, before, after),)
     if isinstance(after, UnaryExpr) and after.operand == before:
         return (Edit(path, EditKind.ADD_NEGATION, before, after),)
@@ -107,7 +107,7 @@ def compare_revisions(
     if max_assignments < 1:
         raise ValueError("max_assignments must be positive")
     edits, terms = structural_edits(before, after), compare_terms(before, after)
-    if assumptions is None and structural_key(before) == structural_key(after):
+    if assumptions is None and canonical_key(before) == canonical_key(after):
         return RevisionComparison(before, after, edits, terms, Effect.EQUIVALENT, assumptions=assumptions)
     symbols = collect_terms(before) | collect_terms(after)
     if assumptions is not None:

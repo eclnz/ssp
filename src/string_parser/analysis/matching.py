@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from ..syntax.expressions import BinaryExpr, Expr, Op, Term, flatten, structural_key
+from ..syntax.expressions import BinaryExpr, Expr, Op, Term, canonical_key, flatten
 
 
 class TermMatcher(Protocol):
@@ -27,7 +27,7 @@ def implies(premise: Expr, conclusion: Expr, *, matcher: TermMatcher = EXACT) ->
     False means unproved, not a proof that implication is impossible. Negations
     are opaque except for structural equality, including reordered operands.
     """
-    if structural_key(premise) == structural_key(conclusion):
+    if canonical_key(premise) == canonical_key(conclusion):
         return True
     if isinstance(conclusion, Term) and isinstance(premise, Term):
         return matcher.covers_term(conclusion.value, premise.value)

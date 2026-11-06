@@ -5,7 +5,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from .analysis.revisions import Edit, Path, structural_edits
-from .syntax.expressions import BinaryExpr, Expr, UnaryExpr, structural_key
+from .syntax.expressions import BinaryExpr, Expr, UnaryExpr, canonical_key
 
 
 @dataclass(frozen=True)
@@ -40,7 +40,7 @@ def merge_revisions(base: Expr, left: Expr, right: Expr) -> MergeResult:
             return right_node
         if right_node == base_node:
             return left_node
-        if structural_key(left_node) == structural_key(base_node) or structural_key(right_node) == structural_key(
+        if canonical_key(left_node) == canonical_key(base_node) or canonical_key(right_node) == canonical_key(
             base_node
         ):
             reason = "reordering overlaps concurrent edits"

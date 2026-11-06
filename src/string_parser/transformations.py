@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from .analysis.matching import EXACT, TermMatcher
 from .analysis.redundancy import find_redundant_operands
-from .syntax.expressions import BinaryExpr, Expr, Op, Term, UnaryExpr, flatten, rebuild, structural_key
+from .syntax.expressions import BinaryExpr, Expr, Op, Term, UnaryExpr, canonical_key, flatten, rebuild
 
 
 def canonicalize(expr: Expr) -> Expr:
@@ -18,10 +18,10 @@ def canonicalize(expr: Expr) -> Expr:
     if isinstance(expr, UnaryExpr):
         return UnaryExpr(expr.op, canonicalize(expr.operand))
     if expr.op == Op.OR:
-        branches = sorted([canonicalize(b) for b in flatten(expr, Op.OR)], key=structural_key)
+        branches = sorted([canonicalize(b) for b in flatten(expr, Op.OR)], key=canonical_key)
         return rebuild(Op.OR, branches)
     if expr.op == Op.AND:
-        operands = sorted([canonicalize(e) for e in flatten(expr, Op.AND)], key=structural_key)
+        operands = sorted([canonicalize(e) for e in flatten(expr, Op.AND)], key=canonical_key)
         return rebuild(Op.AND, operands)
     return expr
 

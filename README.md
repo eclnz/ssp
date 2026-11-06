@@ -62,7 +62,7 @@ Competing edits at one occurrence, ancestor replacement versus descendant edits,
 
 The generic core parses uppercase AND/OR/NOT with precedence NOT > AND > OR, balanced parentheses, and opaque quoted/unquoted term fragments. Raw spelling, case, and quoting remain significant. `ParseError` reports a zero-based character offset. Implicit AND requires `allow_implicit_and=True` and emits `ImplicitAndWarning`.
 
-AST nodes are immutable. `unparse`, `canonicalize`, and `simplify` operate on expressions. Simplification and canonicalization are separate, explicit operations; comparison and merge never silently apply them. `collect_terms`/`compare_terms` support an explicit inventory key but inventory changes alone do not determine match-set effects.
+AST nodes are immutable. `canonical_key(expr)` returns an opaque `CanonicalKey` supporting equality, hashing, and ordering modulo AND/OR association and operand order. Raw term identity and duplicate operands remain significant; this is not complete Boolean equivalence. Its representation and relative sort order are private, and its hash is not a persistent revision digest. `unparse`, `canonicalize`, and `simplify` operate on expressions. Simplification and canonicalization are separate, explicit operations; comparison and merge never silently apply them. `collect_terms`/`compare_terms` support an explicit inventory key but inventory changes alone do not determine match-set effects.
 
 Optional lexical conventions remain in `conventions/`. A `TermMatcher` can be supplied to simplification; semantic revision comparison uses explicit assumption expressions instead. The core does not import optional conventions. There is no general `analyze()` or duplicate-term diagnostic service.
 

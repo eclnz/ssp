@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from enum import Enum
 
-from ..syntax.expressions import BinaryExpr, Expr, Op, flatten, structural_key, unparse
+from ..syntax.expressions import BinaryExpr, Expr, Op, canonical_key, flatten, unparse
 
 
 class ChangeKind(Enum):
@@ -79,6 +79,6 @@ def _align(old: Expr, new: Expr) -> ExpressionDiff:
 
 def compare_expressions(old: Expr, new: Expr, *, ignore_operand_order: bool = False) -> ExpressionDiff | None:
     """Align reconstructed query text; suppress operand reorderings only on request."""
-    if old == new or (ignore_operand_order and structural_key(old) == structural_key(new)):
+    if old == new or (ignore_operand_order and canonical_key(old) == canonical_key(new)):
         return None
     return _align(old, new)
