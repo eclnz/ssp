@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import Literal, TypeAlias
+from typing import NewType
 
 
 class Op(Enum):
@@ -76,40 +76,20 @@ def rebuild(op: Op, operands: Iterable[Expr]) -> Expr:
     return result
 
 
-# Representation is private; callers use CanonicalKey's value operations only.
-_KeyParts: TypeAlias = (
-    tuple[Literal["term"], str]
-    | tuple[Literal["not"], "_KeyParts"]
-    | tuple[Literal["AND", "OR"], tuple["_KeyParts", ...]]
-)
-
-
-@dataclass(frozen=True, order=True, init=False, repr=False, match_args=False)
-class CanonicalKey:
-    """Opaque, hashable, ordered identity modulo AND/OR association and order.
-
-    Raw terms remain distinct. This is not complete Boolean equivalence: A AND A
-    still differs from A. Representation and relative sort order are private.
-    """
-
-    _parts: _KeyParts
-
-    def __init__(self, expr: Expr) -> None:
-        object.__setattr__(self, "_parts", _canonical_parts(expr))
-
-
-def _canonical_parts(expr: Expr) -> _KeyParts:
-    if isinstance(expr, UnaryExpr):
-        return ("not", _canonical_parts(expr.operand))
-    if isinstance(expr, BinaryExpr):
-        tag: Literal["AND", "OR"] = "AND" if expr.op is Op.AND else "OR"
-        return (tag, tuple(sorted(_canonical_parts(node) for node in flatten(expr, expr.op))))
-    return ("term", expr.value)
+CanonicalKey = NewType("CanonicalKey", tuple)
 
 
 def canonical_key(expr: Expr) -> CanonicalKey:
-    """Return an opaque identity key; no simplification or term interpretation."""
-    return CanonicalKey(expr)
+    """Identity modulo AND/OR association and order, preserving raw terms.
+
+    The tuple layout is an implementation detail. This is not complete Boolean
+    equivalence: duplicate operands and other logical rewrites remain distinct.
+    """
+    if isinstance(expr, UnaryExpr):
+        return CanonicalKey(("not", canonical_key(expr.operand)))
+    if isinstance(expr, BinaryExpr):
+        return CanonicalKey((expr.op.value, tuple(sorted(canonical_key(node) for node in flatten(expr, expr.op)))))
+    return CanonicalKey(("term", expr.value))
 
 
 def unparse(expr: Expr) -> str:

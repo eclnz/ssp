@@ -1,10 +1,9 @@
-from string_parser import CanonicalKey, canonical_key, parse
+from string_parser import canonical_key, parse
 
 
-def test_keys_are_opaque_values_with_associative_commutative_equality():
+def test_keys_support_associative_commutative_equality_and_hashing():
     first = canonical_key(parse("A OR (B OR C)"))
     second = canonical_key(parse("(C OR A) OR B"))
-    assert isinstance(first, CanonicalKey)
     assert first == second
     assert len({first, second}) == 1
     assert {first: "revision"}[second] == "revision"
@@ -25,4 +24,4 @@ def test_keys_support_consistent_ordering_without_prescribing_representation():
 
 def test_key_equality_does_not_become_full_logical_equivalence():
     assert canonical_key(parse("A OR (A AND B)")) != canonical_key(parse("A"))
-    assert CanonicalKey(parse("A AND (B AND C)")) == canonical_key(parse("(C AND A) AND B"))
+    assert canonical_key(parse("A AND (B AND C)")) == canonical_key(parse("(C AND A) AND B"))
