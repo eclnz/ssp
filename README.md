@@ -40,6 +40,24 @@ Operators are uppercase `NOT`, `AND`, and `OR`, with precedence `NOT > AND > OR`
 
 This preserves litdb's original parser behavior. It is not a complete PubMed grammar or a strict query validator: database field tags remain term text, unmatched parentheses and trailing tokens may be accepted, and malformed or empty input can raise `ValueError` or `IndexError`. Simplification uses lexical phrase containment rather than database-aware search semantics. Review suggestions before applying them to a database query.
 
+## Package layout
+
+`__init__.py` exposes the stable public API. Implementation modules have distinct responsibilities:
+
+| Module | Responsibility |
+| --- | --- |
+| `ast.py` | Operators and expression tree types |
+| `tokenizer.py` | Recognize terms, quoted phrases, operators, and parentheses |
+| `parser.py` | Recursive-descent grammar and implicit AND warnings |
+| `_tree.py` | Internal tree traversal and reconstruction helpers |
+| `analysis.py` | Term collection, change classification, and redundancy detection |
+| `normalization.py` | Canonical forms and order-independent comparisons |
+| `simplification.py` | Simplification, lint messages, and suggestions |
+| `rendering.py` | Query serialization and tree printing |
+| `diff.py` | Colored structural diffs |
+
+Tests are grouped by behavior in `tests/`. Internal modules import their dependencies directly; callers can continue importing the public API from `string_parser`.
+
 ## Provenance
 
 The initial implementation and tests come from `src/string_parser.py` and `tests/test_string_parser.py` in litdb. No runtime database, GUI, network, or litdb dependencies are required.

@@ -1,16 +1,6 @@
 """Public API for Boolean search string parsing and analysis."""
 
-from .parser import (
-    BinaryExpr,
-    Colour,
-    Expr,
-    ImplicitAndWarning,
-    Op,
-    Term,
-    UnaryExpr,
-    canonical_form,
-    canonicalize,
-    canonically_equal,
+from .analysis import (
     classify_change,
     collect_terms,
     combine,
@@ -19,14 +9,36 @@ from .parser import (
     find_duplicate_terms,
     find_subsumed_branches,
     find_subsumed_terms,
+)
+from .ast import (
+    BinaryExpr,
+    Expr,
+    Op,
+    Term,
+    UnaryExpr,
+)
+from .diff import (
+    Colour,
     format_simplification_diff,
     format_string_diff,
-    lint_string,
+)
+from .normalization import (
+    canonical_form,
+    canonicalize,
+    canonically_equal,
+)
+from .parser import (
+    ImplicitAndWarning,
     parse,
+)
+from .rendering import (
     print_expr,
+    unparse,
+)
+from .simplification import (
+    lint_string,
     simplify,
     suggest_simplification,
-    unparse,
 )
 
 __all__ = [
