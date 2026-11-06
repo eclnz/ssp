@@ -40,11 +40,6 @@ def rebuild(op: Op, operands: Iterable[Expr]) -> Expr:
     return result
 
 
-def combine(*exprs: Expr) -> Expr:
-    """Join expressions with OR."""
-    return rebuild(Op.OR, exprs)
-
-
 def structural_key(expr: Expr) -> tuple:
     """Hashable identity ignoring associative operand order, preserving raw terms."""
     if isinstance(expr, UnaryExpr):

@@ -13,8 +13,8 @@ class ImplicitAndWarning(UserWarning):
     """Adjacent operands have been joined with an implicit AND."""
 
 
-def parse(text: str) -> Expr:
-    """Parse a complete query or raise ParseError; retain implicit AND support."""
+def parse(text: str, *, allow_implicit_and: bool = False) -> Expr:
+    """Parse a complete query or raise ParseError; implicit AND requires opt-in."""
     tokens = tokenize(text)
     pos = 0
 
@@ -38,7 +38,7 @@ def parse(text: str) -> Expr:
         while True:
             if kind() is TokenKind.AND:
                 pos += 1
-            elif kind() in (TokenKind.TERM, TokenKind.OPEN, TokenKind.NOT):
+            elif allow_implicit_and and kind() in (TokenKind.TERM, TokenKind.OPEN, TokenKind.NOT):
                 warnings.warn("Adjacent operands treated as AND", ImplicitAndWarning, stacklevel=3)
             else:
                 break

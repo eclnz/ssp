@@ -1,9 +1,9 @@
 """Expression-oriented public API; string conveniences live in string_parser.api."""
 
 from .analysis.changes import TermChanges, compare_terms
-from .analysis.diagnostics import Diagnostic, DiagnosticKind, analyze
+from .analysis.diagnostics import Diagnostic, DuplicateTerm, RedundantOperandDiagnostic, analyze
 from .analysis.diff import ExpressionDiff, compare_expressions
-from .analysis.matching import MatchPolicy
+from .analysis.matching import EXACT, TermMatcher
 from .syntax.ast import BinaryExpr, Expr, Op, Term, UnaryExpr
 from .syntax.errors import ParseError
 from .syntax.parser import ImplicitAndWarning, parse
@@ -15,11 +15,13 @@ __all__ = [
     "TermChanges",
     "compare_terms",
     "Diagnostic",
-    "DiagnosticKind",
+    "DuplicateTerm",
+    "RedundantOperandDiagnostic",
+    "TermMatcher",
     "analyze",
     "ExpressionDiff",
     "compare_expressions",
-    "MatchPolicy",
+    "EXACT",
     "BinaryExpr",
     "Expr",
     "Op",

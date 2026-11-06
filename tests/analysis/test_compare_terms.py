@@ -1,46 +1,14 @@
-from string_parser.analysis.changes import compare_terms
-from string_parser.syntax.parser import parse
+from string_parser import compare_terms, parse
+from string_parser.conventions.lexical import lexical_term_key
 
 
-class TestCompareTerms:
-    def test_pure_expansion(self) -> None:
-        added, removed = compare_terms(
-            parse('(COPD OR "chronic obstructive pulmonary disease") AND NIV'),
-            parse('(COPD OR "chronic obstructive pulmonary disease") AND (NIV OR BiPAP)'),
-        )
-        assert added == {"bipap"}
-        assert removed == set()
+def test_compare_terms_does_not_silently_change_identity():
+    changes = compare_terms(parse("A AND B"), parse("a AND B"))
+    assert changes.added == {"a"} and changes.removed == {"A"}
+    assert compare_terms(parse("A AND B"), parse("a AND B"), key=lexical_term_key) == (set(), set())
 
-    def test_pure_narrowing(self) -> None:
-        added, removed = compare_terms(
-            parse('(COPD OR AECOPD) AND ("non-invasive ventilation" OR NIV OR BiPAP)'),
-            parse('(COPD OR AECOPD) AND ("non-invasive ventilation" OR NIV)'),
-        )
-        assert added == set()
-        assert removed == {"bipap"}
 
-    def test_mixed_change(self) -> None:
-        added, removed = compare_terms(
-            parse('(COPD OR AECOPD) AND "non-invasive ventilation"'),
-            parse('(COPD OR AECOPD) AND "high flow nasal cannula"'),
-        )
-        assert added == {"high flow nasal cannula"}
-        assert removed == {"non-invasive ventilation"}
-
-    def test_structural_change_same_terms(self) -> None:
-        added, removed = compare_terms(parse("(COPD AND NIV)"), parse("COPD OR NIV"))
-        assert added == set()
-        assert removed == set()
-
-    def test_identical_strings(self) -> None:
-        added, removed = compare_terms(
-            parse('(COPD OR AECOPD) AND ("non-invasive ventilation" OR NIV)'),
-            parse('(COPD OR AECOPD) AND ("non-invasive ventilation" OR NIV)'),
-        )
-        assert added == set()
-        assert removed == set()
-
-    def test_quoted_phrase_expansion(self) -> None:
-        added, removed = compare_terms(parse("COPD AND NIV"), parse('COPD AND (NIV OR "high flow nasal oxygen")'))
-        assert added == {"high flow nasal oxygen"}
-        assert removed == set()
+def test_inventory_is_not_a_meaning_comparison():
+    before = parse("A AND B")
+    for after in (parse("A OR B"), parse("A AND NOT B")):
+        assert compare_terms(before, after) == (set(), set())

@@ -1,12 +1,17 @@
-"""Human-readable wording for structured analysis findings."""
+"""Human-readable wording for validated diagnostic variants."""
 
-from ..analysis.diagnostics import Diagnostic, DiagnosticKind
+from typing import assert_never
+
+from ..analysis.diagnostics import Diagnostic, DuplicateTerm, RedundantOperandDiagnostic
+from ..syntax.serialization import unparse
 
 
 def render_diagnostic(item: Diagnostic) -> str:
-    if item.kind is DiagnosticKind.DUPLICATE:
-        return f"Duplicate term: {item.broader[0]!r} appears more than once"
-    if item.kind is DiagnosticKind.AND_REDUNDANCY:
-        a, b = item.broader[0], item.narrower[0]
-        return f"AND redundancy: {a!r} is satisfied when {b!r} matches — {a!r} can be removed under {item.policy.value} matching"
-    return f"OR redundancy: ({' AND '.join(item.narrower)}) is captured by ({' AND '.join(item.broader)}) under {item.policy.value} matching"
+    match item:
+        case DuplicateTerm(term=term, count=count):
+            return f"Duplicate term: {term!r} appears {count} times"
+        case RedundantOperandDiagnostic():
+            label = f"{item.matching_label} matching" if item.matching_label else "the selected matching assumptions"
+            return f"{item.operator.value} redundancy: {unparse(item.redundant)!r} can be removed; retained {unparse(item.retained)!r} under {label}"
+        case _:
+            assert_never(item)
