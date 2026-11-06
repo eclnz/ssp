@@ -18,8 +18,7 @@ def test_keys_support_consistent_ordering_without_prescribing_representation():
     keys = [canonical_key(parse(text)) for text in ["A", "NOT A", "B AND C", "A OR B"]]
     ordered = sorted(keys)
     assert sorted(reversed(keys)) == ordered
-    assert all(a < b for a, b in zip(ordered, ordered[1:]))
-    assert all(a <= b for a, b in zip(ordered, ordered[1:]))
+    assert all(sorted((b, a)) == [a, b] for a, b in zip(ordered, ordered[1:]))
 
 
 def test_key_equality_does_not_become_full_logical_equivalence():

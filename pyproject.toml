@@ -1,6 +1,6 @@
 [project]
 name = "ssp"
-version = "0.5.2"
+version = "0.5.3"
 description = "Compare and merge search-string revisions"
 readme = "README.md"
 requires-python = ">=3.11"

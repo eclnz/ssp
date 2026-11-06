@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Iterator
 from dataclasses import dataclass
 from enum import Enum
-from typing import NewType
+from typing import Literal, TypeAlias
 
 
 class Op(Enum):
@@ -76,20 +76,25 @@ def rebuild(op: Op, operands: Iterable[Expr]) -> Expr:
     return result
 
 
-CanonicalKey = NewType("CanonicalKey", tuple)
+TermKey: TypeAlias = tuple[Literal["term"], str]
+UnaryKey: TypeAlias = tuple[Literal["not"], "CanonicalKey"]
+BinaryKey: TypeAlias = tuple[Literal["AND", "OR"], tuple["CanonicalKey", ...]]
+CanonicalKey: TypeAlias = TermKey | UnaryKey | BinaryKey
 
 
 def canonical_key(expr: Expr) -> CanonicalKey:
     """Identity modulo AND/OR association and order, preserving raw terms.
 
-    The tuple layout is an implementation detail. This is not complete Boolean
-    equivalence: duplicate operands and other logical rewrites remain distinct.
+    This is not complete Boolean equivalence: duplicate operands and other
+    logical rewrites remain distinct.
     """
+    if isinstance(expr, Term):
+        return ("term", expr.value)
     if isinstance(expr, UnaryExpr):
-        return CanonicalKey(("not", canonical_key(expr.operand)))
-    if isinstance(expr, BinaryExpr):
-        return CanonicalKey((expr.op.value, tuple(sorted(canonical_key(node) for node in flatten(expr, expr.op)))))
-    return CanonicalKey(("term", expr.value))
+        return ("not", canonical_key(expr.operand))
+    operator = "AND" if expr.op is Op.AND else "OR"
+    operands = sorted(canonical_key(node) for node in flatten(expr, expr.op))
+    return (operator, tuple(operands))
 
 
 def unparse(expr: Expr) -> str:
