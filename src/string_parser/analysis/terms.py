@@ -1,4 +1,4 @@
-"""Term identity and complete positive-conjunction projections."""
+"""Raw term inventories with caller-selected normalization."""
 
 from __future__ import annotations
 

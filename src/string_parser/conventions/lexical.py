@@ -1,7 +1,5 @@
 """Optional lexical heuristics, not claims about any search database."""
 
-from dataclasses import dataclass
-
 
 def lexical_term_key(value: str) -> str:
     """Casefold and remove one enclosing quote pair; preserve other raw syntax."""
@@ -10,7 +8,6 @@ def lexical_term_key(value: str) -> str:
     return value.casefold()
 
 
-@dataclass(frozen=True)
 class LexicalPhraseMatcher:
     """Assume a contiguous phrase covers its extensions. Not database-aware."""
 

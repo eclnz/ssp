@@ -40,7 +40,9 @@ def analyze(expr: Expr, *, matcher: TermMatcher = EXACT, matching_label: str | N
     A label is optional display metadata; matchers only implement covers_term.
     Evidence describes the supplied tree, not all findings a later rewrite may expose.
     """
-    result: list[Diagnostic] = [DuplicateTerm(term, count, matching_label) for term, count in duplicate_terms(expr, matcher=matcher)]
+    result: list[Diagnostic] = [
+        DuplicateTerm(term, count, matching_label) for term, count in duplicate_terms(expr, matcher=matcher)
+    ]
     result.extend(
         RedundantOperandDiagnostic(item.operator, item.redundant, item.retained, item.equivalent, matching_label)
         for item in inspect_redundancies(expr, matcher=matcher)

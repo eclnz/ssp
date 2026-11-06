@@ -1,4 +1,4 @@
-"""Expression-oriented public API; string conveniences live in string_parser.api."""
+"""Public expression API for generic Boolean queries."""
 
 from .analysis.changes import TermChanges, compare_terms
 from .analysis.diagnostics import Diagnostic, DuplicateTerm, RedundantOperandDiagnostic, analyze
