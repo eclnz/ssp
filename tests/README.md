@@ -14,7 +14,7 @@ The documented grammar chooses uppercase operators, NOT > AND > OR precedence, b
 
 These are chosen contracts, not universal search-engine rules. A deliberate grammar/API change should update these tests after the contract is changed. Structural examples test the grammar; they do not claim a database interprets the same query identically.
 
-API tests cover raw inventories with a caller-supplied normalization key, immutable ASTs, matcher substitution in simplification, structured revision edits, conservative merge conflicts, and style-independent rendering. They avoid exact message snapshots, canonical branch ordering, and parentheses/ANSI-span placement.
+Parser tests exercise the public grammar and absolute error offsets without depending on library parse trees or messages. API tests cover raw inventories with a caller-supplied normalization key, immutable ASTs, matcher substitution in simplification, structured revision edits, conservative merge conflicts, and style-independent rendering. They avoid exact message snapshots, canonical branch ordering, and parentheses/ANSI-span placement.
 
 ## Optional conventions
 
@@ -27,6 +27,6 @@ Removed tests and compatibility-only reporting helpers that required lowercase t
 
 ## Revision comparison and merge
 
-The revision contract records structural edits even for logically equivalent reorderings. Broader/narrower/mixed labels are determined by Boolean effects, never counts of added or removed terms. Semantic comparison has an explicit enumeration budget and reports unknown honestly. Supplied assumptions are tested separately from independent-symbol behavior.
+The revision contract records structural edits even for logically equivalent reorderings. Broader/narrower/mixed labels are determined by Boolean effects, never counts of added or removed terms. Production semantic comparison uses limited SAT checks; truth-table enumeration remains an independent test oracle. Tests exercise actual work exhaustion and injected unfinished statuses so unknown is never confused with unsatisfiable. Larger-than-12-symbol cases, non-canonical equivalence, witness decoding, and assumption consistency are covered. Supplied assumptions are tested separately from independent-symbol behavior.
 
 Three-way merging is occurrence-based and conservative. Tests cover fast forwards, identical edits, disjoint subtree edits, overlapping replacements/operators, ambiguous reorderings, and preservation of both sides' accepted edits. These are required merge guarantees, not a requirement to resolve every valid merge automatically. General duplicate-term diagnostics and the umbrella analysis API have been retired.

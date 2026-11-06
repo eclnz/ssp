@@ -1,6 +1,6 @@
 # ssp
 
-Search-string comparison and merge primitives for building version-control tools. Python 3.11+, with no runtime dependencies. SSP does not store revisions or manage repositories.
+Search-string comparison and merge primitives for building version-control tools. Python 3.11+, using Lark for parsing and PySAT/MiniSat for Boolean reasoning. SSP does not store revisions or manage repositories.
 
 ```bash
 uv sync --group dev
@@ -35,7 +35,17 @@ Edits distinguish term replacement, operator changes, adding/removing negation o
 
 Terms are independent raw Boolean symbols, not database-resolved searches. A witness describes hypothetical term matches, not a retrieved record or an observed result-count change.
 
-Effect classification uses bounded exhaustive evaluation. The default `max_assignments=4096` supports up to 12 distinct symbols across the two revisions and assumptions; larger comparisons return `UNKNOWN` before enumerating. Callers may explicitly increase the budget, with exponential cost. Identical or associatively reordered expressions without assumptions can be proven equivalent directly at any symbol count. The existing implication helper remains a conservative internal aid for simplification, not a semantic classification oracle.
+Effect classification uses SAT checks for `after AND NOT before` (gains) and `before AND NOT after` (losses). A linear-size encoding preserves the Boolean structure; production never enumerates truth tables. If both directions are unsatisfiable under supplied assumptions, the assumption context must also be proven satisfiable before reporting equivalence.
+
+There is no fixed term-count ceiling. Default per-check limits are 10,000 conflicts and 1,000,000 propagations; configure them explicitly:
+
+```python
+from string_parser import SolverLimits
+change = compare_revisions(parse("A AND B"), parse("A OR B"),
+                           limits=SolverLimits(conflicts=50_000, propagations=2_000_000))
+```
+
+An unfinished check returns `UNKNOWN`, retaining any witnesses already established. Inconsistent assumptions also return `UNKNOWN`. These are solver-work limits, not wall-clock or memory limits: encoding and solver initialization happen before limited solving, and hard problems can still be expensive. Budgets are positive to avoid accidentally disabling PySAT's limits. The old `max_assignments` parameter has been removed.
 
 Relationships between terms can be supplied explicitly as an assumption expression:
 
@@ -60,7 +70,7 @@ Competing edits at one occurrence, ancestor replacement versus descendant edits,
 
 ## Core and optional conventions
 
-The generic core parses uppercase AND/OR/NOT with precedence NOT > AND > OR, balanced parentheses, and opaque quoted/unquoted term fragments. Raw spelling, case, and quoting remain significant. `ParseError` reports a zero-based character offset. Implicit AND requires `allow_implicit_and=True` and emits `ImplicitAndWarning`.
+A small Lark LALR grammar parses uppercase AND/OR/NOT with precedence NOT > AND > OR, balanced parentheses, and opaque quoted/unquoted term fragments. Raw spelling, case, and quoting remain significant. `ParseError` reports a zero-based character offset. Implicit AND requires `allow_implicit_and=True` and emits `ImplicitAndWarning`.
 
 AST nodes are immutable. `canonical_key(expr)` returns a recursively typed `CanonicalKey` union of `TermKey`, `UnaryKey`, and `BinaryKey`, using ordinary tuple equality, hashing, and ordering modulo AND/OR association and operand order. Raw term identity and duplicate operands remain significant; this is not complete Boolean equivalence. The aliases describe the tuple shapes without runtime wrappers; relative sort order remains an implementation detail, and its hash is not a persistent revision digest. `unparse`, `canonicalize`, and `simplify` operate on expressions. Simplification and canonicalization are separate, explicit operations; comparison and merge never silently apply them. `collect_terms`/`compare_terms` support an explicit inventory key but inventory changes alone do not determine match-set effects.
 
@@ -68,14 +78,14 @@ Optional lexical conventions remain in `conventions/`. A `TermMatcher` can be su
 
 ## Structure
 
-- `syntax/`: expressions, tokens, grammar.
-- `analysis/`: inventory and structural comparison, revision effects, internal matching/redundancy proofs.
+- `syntax/`: expressions and the Lark grammar/AST adapter.
+- `analysis/`: inventory/structural comparison, revision effects, a scoped PySAT adapter, and internal matching/redundancy proofs.
 - `merging.py`: conservative three-way merge and conflicts.
 - `transformations.py`: explicit canonicalization and simplification.
 - `presentation.py`: reconstructed-text diff rendering.
 - `conventions/`: optional lexical heuristics.
 
-[tests/README.md](tests/README.md) describes the contracts and independent Boolean-oracle checks. Version 0.5 replaces the general diagnostic interface with revision comparison and merge operations. No compatibility with a consuming application's historical assumptions is imposed.
+[tests/README.md](tests/README.md) describes the contracts and independent Boolean-oracle checks. Version 0.6 replaces handwritten parsing with Lark and truth-table enumeration with limited SAT checks. Comparison and merge result types remain independent of both libraries. No compatibility with a consuming application's historical assumptions is imposed.
 
 ## Graphify
 

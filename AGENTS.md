@@ -14,6 +14,8 @@ The core is generic Boolean syntax. Raw terms retain their identity. Database co
 ## Boundaries and checks
 
 - `syntax` is independent; `analysis` uses syntax; `transformations` uses syntax and analysis; `presentation` renders results. The core never imports optional conventions.
+- Lark owns parsing machinery; SSP owns the grammar, expressions, and error API. PySAT owns SAT solving; SSP owns the encoding, witness decoding, and effect classification. Keep third-party details at these adapter boundaries.
+- Truth-table enumeration belongs in tests only. Unfinished SAT checks must never be interpreted as unsatisfiable. Solver budgets apply per check and are not time/memory limits.
 - Public analysis is revision comparison, not a general linting service. Structural edits and Boolean effects are separate. Matchers implement only `covers_term`; semantic comparison takes explicit assumptions.
 - Merge must preserve accepted occurrence edits and report overlapping/ambiguous edits as conflicts. Never return a partial executable expression on conflict.
 - `merging.py` depends on comparison and syntax; do not introduce revision storage or application workflow logic.

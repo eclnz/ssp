@@ -3,11 +3,11 @@
 from .analysis.diff import ExpressionDiff, compare_expressions
 from .analysis.matching import EXACT, TermMatcher
 from .analysis.revisions import Edit, EditKind, Effect, RevisionComparison, compare_revisions
+from .analysis.satisfiability import SolverLimits
 from .analysis.terms import TermChanges, compare_terms
 from .merging import MergeConflict, MergeResult, merge_revisions
 from .syntax.expressions import BinaryExpr, CanonicalKey, Expr, Op, Term, UnaryExpr, canonical_key, unparse
-from .syntax.parser import ImplicitAndWarning, parse
-from .syntax.tokens import ParseError
+from .syntax.parser import ImplicitAndWarning, ParseError, parse
 from .transformations import canonicalize, simplify
 
 __all__ = [
@@ -34,6 +34,7 @@ __all__ = [
     "EditKind",
     "Effect",
     "RevisionComparison",
+    "SolverLimits",
     "compare_revisions",
     "MergeConflict",
     "MergeResult",

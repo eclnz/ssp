@@ -4,7 +4,7 @@ from random import Random
 
 import pytest
 
-from string_parser import BinaryExpr, EditKind, Effect, Op, Term, UnaryExpr, compare_revisions, parse
+from string_parser import BinaryExpr, EditKind, Effect, Op, SolverLimits, Term, UnaryExpr, compare_revisions, parse
 
 
 @pytest.mark.parametrize(
@@ -95,13 +95,10 @@ def test_comparison_and_edit_replay_match_an_independent_oracle():
         assert replayed == new
 
 
-def test_budget_exhaustion_is_unknown_and_does_not_hide_structural_edits():
-    result = compare_revisions(parse("A AND B"), parse("A OR B"), max_assignments=2)
-    assert result.effect is Effect.UNKNOWN and result.reason and result.edits
-    assert result.added_witness is result.removed_witness is None
-    assert compare_revisions(parse("A AND B"), parse("A OR B"), max_assignments=4).effect is Effect.BROADER
+@pytest.mark.parametrize("limits", [dict(conflicts=0), dict(propagations=0), dict(conflicts=-1)])
+def test_solver_limits_cannot_accidentally_disable_budgets(limits):
     with pytest.raises(ValueError):
-        compare_revisions(parse("A"), parse("B"), max_assignments=0)
+        SolverLimits(**limits)
 
 
 def test_relationship_assumptions_are_explicit_and_witnesses_obey_them():
@@ -114,5 +111,7 @@ def test_relationship_assumptions_are_explicit_and_witnesses_obey_them():
 
 
 def test_identical_and_reordered_revisions_do_not_need_exhaustive_enumeration():
-    result = compare_revisions(parse("A OR B OR C"), parse("C OR A OR B"), max_assignments=1)
+    result = compare_revisions(
+        parse("A OR B OR C"), parse("C OR A OR B"), limits=SolverLimits(conflicts=1, propagations=1)
+    )
     assert result.effect is Effect.EQUIVALENT and result.edits

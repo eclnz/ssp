@@ -4,7 +4,6 @@ import pytest
 
 from string_parser import BinaryExpr, Op, ParseError, Term, UnaryExpr, parse, unparse
 from string_parser.syntax.expressions import rebuild
-from string_parser.syntax.tokens import TokenKind, tokenize
 
 
 def test_precedence_and_quoted_terms():
@@ -13,14 +12,10 @@ def test_precedence_and_quoted_terms():
     assert parse(unparse(expr)) == expr
 
 
-def test_error_and_token_offsets():
+def test_parse_errors_retain_character_offsets():
     with pytest.raises(ParseError) as error:
         parse("A AND")
     assert error.value.position == 5
-    text = '  "two words"'
-    token = tokenize(text)[0]
-    assert token.kind is TokenKind.TERM
-    assert (token.start, token.end) == (2, len(text))
 
 
 def test_ast_is_immutable_and_rejects_wrong_operator_arity():
