@@ -1,6 +1,6 @@
 from string_parser import RedundantOperandDiagnostic, analyze, compare_expressions, compare_terms, parse
 from string_parser.conventions.lexical import LEXICAL_PHRASE
-from string_parser.presentation.diff import render_diff
+from string_parser.presentation import render_diff
 
 
 def test_term_inventory_and_structural_changes_are_separate():

@@ -3,7 +3,7 @@ import re
 import pytest
 
 from string_parser import compare_expressions, parse
-from string_parser.presentation.diff import render_diff
+from string_parser.presentation import render_diff
 
 
 @pytest.mark.parametrize(

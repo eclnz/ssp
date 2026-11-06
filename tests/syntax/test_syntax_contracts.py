@@ -3,8 +3,8 @@ from dataclasses import FrozenInstanceError
 import pytest
 
 from string_parser import BinaryExpr, Op, ParseError, Term, UnaryExpr, parse, unparse
-from string_parser.syntax.tokenizer import TokenKind, tokenize
-from string_parser.syntax.tree import rebuild
+from string_parser.syntax.expressions import rebuild
+from string_parser.syntax.tokens import TokenKind, tokenize
 
 
 def test_precedence_and_quoted_field_suffix():

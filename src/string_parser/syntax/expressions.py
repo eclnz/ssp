@@ -1,10 +1,45 @@
-"""Structural traversal and composition, independent of matching semantics."""
+"""Expression model, structural operations, and query serialization."""
 
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator
+from dataclasses import dataclass
+from enum import Enum
 
-from .ast import BinaryExpr, Expr, Op, UnaryExpr
+
+class Op(Enum):
+    AND = "AND"
+    OR = "OR"
+    NOT = "NOT"
+
+
+@dataclass(frozen=True)
+class Term:
+    value: str  # a search term or quoted phrase e.g. "high flow"
+
+
+@dataclass(frozen=True)
+class BinaryExpr:
+    op: Op  # AND or OR
+    left: Expr
+    right: Expr
+
+    def __post_init__(self) -> None:
+        if self.op not in (Op.AND, Op.OR):
+            raise ValueError("Binary expressions require AND or OR")
+
+
+@dataclass(frozen=True)
+class UnaryExpr:
+    op: Op  # NOT
+    operand: Expr
+
+    def __post_init__(self) -> None:
+        if self.op is not Op.NOT:
+            raise ValueError("Unary expressions require NOT")
+
+
+Expr = Term | BinaryExpr | UnaryExpr
 
 
 def walk(expr: Expr) -> Iterator[Expr]:
@@ -47,3 +82,12 @@ def structural_key(expr: Expr) -> tuple:
     if isinstance(expr, BinaryExpr):
         return (expr.op.value, tuple(sorted(structural_key(node) for node in flatten(expr, expr.op))))
     return ("term", expr.value)
+
+
+def unparse(expr: Expr) -> str:
+    """Reconstruct a PubMed search string from an expression tree."""
+    if isinstance(expr, Term):
+        return expr.value  # preserves original quoting
+    if isinstance(expr, UnaryExpr):
+        return f"NOT {unparse(expr.operand)}"
+    return f"({unparse(expr.left)} {expr.op.value} {unparse(expr.right)})"

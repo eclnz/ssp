@@ -1,4 +1,4 @@
-"""Structural alignment plans containing no terminal styling."""
+"""Structural query comparison without styling."""
 
 from __future__ import annotations
 
@@ -6,9 +6,7 @@ from dataclasses import dataclass
 from difflib import SequenceMatcher
 from enum import Enum
 
-from ..syntax.ast import BinaryExpr, Expr, Op
-from ..syntax.serialization import unparse
-from ..syntax.tree import flatten, structural_key
+from ..syntax.expressions import BinaryExpr, Expr, Op, flatten, structural_key, unparse
 
 
 class ChangeKind(Enum):

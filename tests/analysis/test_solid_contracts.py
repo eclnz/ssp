@@ -13,8 +13,8 @@ from string_parser import (
 )
 from string_parser.analysis.redundancy import find_redundant_operands
 from string_parser.conventions.lexical import LEXICAL_PHRASE
-from string_parser.presentation.diagnostics import render_diagnostic
-from string_parser.syntax.tree import flatten
+from string_parser.presentation import render_diagnostic
+from string_parser.syntax.expressions import flatten
 
 
 class CasefoldMatcher:

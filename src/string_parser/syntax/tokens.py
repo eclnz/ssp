@@ -1,10 +1,18 @@
-"""Positioned lexical tokens, independent of expression tree nodes."""
+"""Positioned lexical tokens, tokenization, and shared parse errors."""
+
+from __future__ import annotations
 
 import re
 from dataclasses import dataclass
 from enum import Enum
 
-from .errors import ParseError
+
+class ParseError(ValueError):
+    """Invalid query syntax at a zero-based character offset."""
+
+    def __init__(self, message: str, position: int):
+        self.position = position
+        super().__init__(f"{message} at character {position}")
 
 
 class TokenKind(Enum):
@@ -24,7 +32,6 @@ class Token:
     end: int
 
 
-# A field suffix remains attached to its quoted phrase. Other field syntax is opaque.
 _TOKEN = re.compile(r'"[^"\n]*"(?:\[[^\]\n]+\])?|[()]|[^"\s()]+')
 
 

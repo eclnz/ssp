@@ -1,0 +1,41 @@
+"""Human-readable diagnostics and optional ANSI diff styling."""
+
+from __future__ import annotations
+
+from enum import StrEnum
+from typing import assert_never
+
+from .analysis.diff import ChangeKind, ExpressionDiff, Fragment
+from .analysis.redundancy import Diagnostic, DuplicateTerm, RedundantOperandDiagnostic
+from .syntax.expressions import unparse
+
+
+def render_diagnostic(item: Diagnostic) -> str:
+    match item:
+        case DuplicateTerm(term=term, count=count):
+            return f"Duplicate term: {term!r} appears {count} times"
+        case RedundantOperandDiagnostic():
+            label = f"{item.matching_label} matching" if item.matching_label else "the selected matching assumptions"
+            return f"{item.operator.value} redundancy: {unparse(item.redundant)!r} can be removed; retained {unparse(item.retained)!r} under {label}"
+        case _:
+            assert_never(item)
+
+
+class Colour(StrEnum):
+    RED = "\033[31m"
+    GREEN = "\033[32m"
+    RESET = "\033[0m"
+
+
+def render_diff(diff: ExpressionDiff, *, color: bool = True) -> tuple[str, str]:
+    def render(fragments: tuple[Fragment, ...]) -> str:
+        result = []
+        for fragment in fragments:
+            if not color or fragment.kind is ChangeKind.SAME:
+                result.append(fragment.text)
+            else:
+                code = Colour.RED if fragment.kind is ChangeKind.REMOVED else Colour.GREEN
+                result.append(f"{code}{fragment.text}{Colour.RESET}")
+        return "".join(result)
+
+    return render(diff.before), render(diff.after)

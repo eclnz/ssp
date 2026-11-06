@@ -1,12 +1,11 @@
-"""Recursive-descent grammar: NOT > AND > OR, with explicit errors."""
+"""Boolean grammar with explicit parsing conventions."""
 
 from __future__ import annotations
 
 import warnings
 
-from .ast import BinaryExpr, Expr, Op, Term, UnaryExpr
-from .errors import ParseError
-from .tokenizer import TokenKind, tokenize
+from .expressions import BinaryExpr, Expr, Op, Term, UnaryExpr
+from .tokens import ParseError, TokenKind, tokenize
 
 
 class ImplicitAndWarning(UserWarning):

@@ -30,7 +30,7 @@ Core operations accept immutable expression trees. There is no parallel string-w
 - `canonicalize` sorts associative operands without interpreting terms. `simplify` applies conservative absorption/duplicate rules. Neither is a complete theorem prover.
 - `analyze` and `simplify` share redundancy proofs. Evidence identifies removable operands and surviving witnesses. Analysis describes the supplied tree; later rewrite stages can expose more findings.
 - Diagnostics are validated `DuplicateTerm` and `RedundantOperandDiagnostic` variants. Occurrence reports are not automatic deletion advice. An optional `matching_label` is data, not a matcher dependency.
-- `compare_expressions` produces an unstyled structural diff. `presentation.diff.render_diff(plan, color=False)` renders plain text; the default adds ANSI styling. Output reconstructs queries rather than preserving source formatting.
+- `compare_expressions` produces an unstyled structural diff. `presentation.render_diff(plan, color=False)` renders plain text; the default adds ANSI styling. Output reconstructs queries rather than preserving source formatting.
 
 ## Optional conventions
 
@@ -48,11 +48,28 @@ Custom matchers implement only `TermMatcher.covers_term(broader, narrower) -> bo
 
 ## Structure and tests
 
-- `syntax/`: AST, tokens, grammar, errors, structural operations, serialization.
-- `analysis/`: inventories, matching contract, implication, shared redundancy evidence, typed findings, diff plans.
-- `transformations/`: normalization and proven rewrites.
-- `presentation/`: diagnostic and diff rendering.
-- `conventions/`: opt-in lexical heuristics.
+```text
+string_parser/
+├── __init__.py
+├── transformations.py      # canonicalization and simplification
+├── presentation.py         # diagnostic and diff rendering
+├── syntax/
+│   ├── __init__.py
+│   ├── expressions.py      # AST, traversal, composition, serialization
+│   ├── tokens.py           # tokenization, tokens, shared parse errors
+│   └── parser.py           # Boolean grammar
+├── analysis/
+│   ├── __init__.py
+│   ├── terms.py            # inventory collection and comparison
+│   ├── matching.py         # matching contract and implication
+│   ├── redundancy.py       # shared evidence, findings, analysis
+│   └── diff.py             # structural comparison
+└── conventions/
+    ├── __init__.py
+    └── lexical.py          # explicit optional heuristics
+```
+
+Modules group code that shares a responsibility and changes together. The parser remains separate from tokenization because the grammar is a real boundary; small inventory, transformation, and rendering operations are consolidated instead of receiving one file each.
 
 [tests/README.md](tests/README.md) distinguishes semantic laws from chosen API contracts and optional conventions. Independent truth tables check meaning preservation across exhaustive shallow and seeded deeper samples. Tests do not prescribe an algorithm, branch order, message wording, or ANSI span arrangement. The original source and tests are reference material, not the specification.
 

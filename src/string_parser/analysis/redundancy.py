@@ -1,11 +1,11 @@
-"""Shared redundancy evidence and focused reporting views of that evidence."""
+"""Shared redundancy evidence, typed findings, and analysis."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ..syntax.ast import BinaryExpr, Expr, Op, Term, UnaryExpr
-from ..syntax.tree import flatten, walk
-from .implication import implies
-from .matching import EXACT, TermMatcher
+from ..syntax.expressions import BinaryExpr, Expr, Op, Term, UnaryExpr, flatten, walk
+from .matching import EXACT, TermMatcher, implies
 
 
 @dataclass(frozen=True)
@@ -78,3 +78,46 @@ def duplicate_terms(expr: Expr, *, matcher: TermMatcher = EXACT) -> list[tuple[s
         else:
             groups.append((node.value, 1))
     return [(term, count) for term, count in groups if count > 1]
+
+
+@dataclass(frozen=True)
+class DuplicateTerm:
+    term: str
+    count: int
+    matching_label: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.count < 2:
+            raise ValueError("Duplicate terms require at least two occurrences")
+
+
+@dataclass(frozen=True)
+class RedundantOperandDiagnostic:
+    operator: Op
+    redundant: Expr
+    retained: Expr
+    equivalent: bool
+    matching_label: str | None = None
+
+    def __post_init__(self) -> None:
+        if self.operator not in (Op.AND, Op.OR):
+            raise ValueError("Operand redundancy requires AND or OR")
+
+
+Diagnostic = DuplicateTerm | RedundantOperandDiagnostic
+
+
+def analyze(expr: Expr, *, matcher: TermMatcher = EXACT, matching_label: str | None = None) -> list[Diagnostic]:
+    """Explain shared redundancy proofs and report repeated term occurrences.
+
+    A label is optional display metadata; matchers only implement covers_term.
+    Evidence describes the supplied tree, not all findings a later rewrite may expose.
+    """
+    result: list[Diagnostic] = [
+        DuplicateTerm(term, count, matching_label) for term, count in duplicate_terms(expr, matcher=matcher)
+    ]
+    result.extend(
+        RedundantOperandDiagnostic(item.operator, item.redundant, item.retained, item.equivalent, matching_label)
+        for item in inspect_redundancies(expr, matcher=matcher)
+    )
+    return result
