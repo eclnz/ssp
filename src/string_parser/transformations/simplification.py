@@ -1,18 +1,12 @@
-"""Remove redundant branches and describe suggested changes."""
+"""Remove redundancies and suggest simplified queries."""
 
 from __future__ import annotations
 
-from ._tree import _collect_and_exprs, _collect_and_terms, _collect_or_branches, _rebuild_binary
-from .analysis import (
-    _branch_subsumes,
-    _is_subphrase,
-    find_and_redundancies,
-    find_duplicate_terms,
-    find_subsumed_branches,
-)
-from .ast import BinaryExpr, Expr, Op, Term, UnaryExpr
-from .parser import parse
-from .rendering import unparse
+from ..analysis.phrases import _branch_subsumes, _is_subphrase
+from ..syntax.ast import BinaryExpr, Expr, Op, Term, UnaryExpr
+from ..syntax.parser import parse
+from ..syntax.serialization import unparse
+from ..syntax.traversal import _collect_and_exprs, _collect_and_terms, _collect_or_branches, _rebuild_binary
 
 
 def simplify(expr: Expr) -> Expr:
@@ -57,28 +51,6 @@ def simplify(expr: Expr) -> Expr:
         return _rebuild_binary(Op.AND, keep_and or and_exprs)
 
     return expr
-
-
-def lint_string(string: str) -> list[str]:
-    """Return human-readable warnings about redundancies in a search string."""
-    expr = parse(string)
-    issues: list[str] = []
-
-    for term in find_duplicate_terms(expr):
-        issues.append(f"Duplicate term: {term!r} appears more than once")
-
-    for broader, narrower in find_and_redundancies(expr):
-        issues.append(
-            f"AND redundancy: {broader!r} is always satisfied when {narrower!r} matches — {broader!r} can be removed"
-        )
-
-    for subsuming, subsumed in find_subsumed_branches(expr):
-        issues.append(
-            f"OR redundancy: ({' AND '.join(sorted(subsumed))}) is fully captured by "
-            f"({' AND '.join(sorted(subsuming))}) — the narrower branch adds no coverage"
-        )
-
-    return issues
 
 
 def suggest_simplification(string: str) -> str | None:

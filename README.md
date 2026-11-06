@@ -42,21 +42,35 @@ This preserves litdb's original parser behavior. It is not a complete PubMed gra
 
 ## Package layout
 
-`__init__.py` exposes the stable public API. Implementation modules have distinct responsibilities:
+`__init__.py` provides the stable public API; package initializers contain no implementation.
 
-| Module | Responsibility |
-| --- | --- |
-| `ast.py` | Operators and expression tree types |
-| `tokenizer.py` | Recognize terms, quoted phrases, operators, and parentheses |
-| `parser.py` | Recursive-descent grammar and implicit AND warnings |
-| `_tree.py` | Internal tree traversal and reconstruction helpers |
-| `analysis.py` | Term collection, change classification, and redundancy detection |
-| `normalization.py` | Canonical forms and order-independent comparisons |
-| `simplification.py` | Simplification, lint messages, and suggestions |
-| `rendering.py` | Query serialization and tree printing |
-| `diff.py` | Colored structural diffs |
+```text
+src/string_parser/
+├── __init__.py
+├── syntax/                 # query language and expression trees
+│   ├── ast.py
+│   ├── tokenizer.py
+│   ├── parser.py
+│   ├── traversal.py
+│   ├── composition.py
+│   └── serialization.py
+├── analysis/               # inspect queries without changing them
+│   ├── terms.py
+│   ├── phrases.py
+│   ├── changes.py
+│   ├── redundancy.py
+│   └── lint.py
+├── transformations/        # produce new expression trees
+│   ├── normalization.py
+│   └── simplification.py
+└── presentation/           # human-facing terminal output
+    ├── console.py
+    └── diff.py
+```
 
-Tests are grouped by behavior in `tests/`. Internal modules import their dependencies directly; callers can continue importing the public API from `string_parser`.
+`syntax` is the foundation and has no dependencies on higher-level packages. `analysis` inspects syntax trees. `transformations` uses syntax and lexical analysis to produce normalized or simplified trees. `presentation` consumes those results to display trees and diffs. Query serialization belongs to `syntax`, so transformations do not depend on terminal formatting.
+
+Tests mirror these four package folders. Internal modules import their dependencies directly; callers can continue using `from string_parser import parse` and the other existing public imports.
 
 ## Provenance
 

@@ -1,11 +1,11 @@
-"""Deterministic, order-independent expression normalization."""
+"""Canonical forms and order-independent comparisons."""
 
 from __future__ import annotations
 
-from ._tree import _collect_and_exprs, _collect_or_branches, _rebuild_binary
-from .ast import Expr, Op, Term, UnaryExpr
-from .parser import parse
-from .rendering import unparse
+from ..syntax.ast import Expr, Op, Term, UnaryExpr
+from ..syntax.parser import parse
+from ..syntax.serialization import unparse
+from ..syntax.traversal import _collect_and_exprs, _collect_or_branches, _rebuild_binary
 
 
 def canonical_form(string: str) -> str:

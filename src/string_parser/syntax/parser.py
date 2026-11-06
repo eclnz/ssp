@@ -1,4 +1,4 @@
-"""Recursive-descent parsing with NOT > AND > OR precedence."""
+"""Recursive-descent grammar with NOT > AND > OR precedence."""
 
 from __future__ import annotations
 

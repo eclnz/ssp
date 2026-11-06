@@ -1,46 +1,12 @@
-"""Term comparison and lexical redundancy analysis."""
+"""Identify duplicate terms and redundant Boolean branches."""
 
 from __future__ import annotations
 
 from collections import Counter
 
-from ._tree import _collect_and_terms, _collect_or_branches
-from .ast import BinaryExpr, Expr, Op, Term, UnaryExpr
-from .parser import parse
-
-
-def collect_terms(expr: Expr) -> set[str]:
-    """Return the set of all leaf terms in an expression, lowercased for comparison."""
-    if isinstance(expr, Term):
-        return {expr.value.lower().strip('"')}
-    elif isinstance(expr, UnaryExpr):
-        return collect_terms(expr.operand)
-    else:
-        return collect_terms(expr.left) | collect_terms(expr.right)
-
-
-def classify_change(old: str, new: str) -> tuple[set[str], set[str]]:
-    """Return (added_terms, removed_terms) between two search strings."""
-    old_terms = collect_terms(parse(old))
-    new_terms = collect_terms(parse(new))
-    return new_terms - old_terms, old_terms - new_terms
-
-
-def _phrase_words(term: str) -> list[str]:
-    return term.lower().strip('"').split()
-
-
-def _is_subphrase(broader: str, narrower: str) -> bool:
-    """True if broader's words appear as a contiguous run inside narrower's words.
-
-    In OR context broader already captures every hit narrower would — narrower is redundant.
-    """
-    bw = _phrase_words(broader)
-    nw = _phrase_words(narrower)
-    n = len(bw)
-    if n >= len(nw):
-        return False
-    return any(nw[i : i + n] == bw for i in range(len(nw) - n + 1))
+from ..syntax.ast import BinaryExpr, Expr, Op, Term, UnaryExpr
+from ..syntax.traversal import _collect_and_terms, _collect_or_branches
+from .phrases import _branch_subsumes, _is_subphrase
 
 
 def find_and_redundancies(expr: Expr) -> list[tuple[str, str]]:
@@ -100,16 +66,6 @@ def find_absorbed_branches(expr: Expr) -> list[tuple[str, set[str]]]:
     return results
 
 
-def combine(*exprs: Expr) -> Expr:
-    """OR together multiple expressions — use when analysing a set of search strings jointly."""
-    if not exprs:
-        raise ValueError("At least one expression required")
-    result = exprs[0]
-    for e in exprs[1:]:
-        result = BinaryExpr(Op.OR, result, e)
-    return result
-
-
 def find_duplicate_terms(expr: Expr) -> list[str]:
     """Return terms that appear more than once anywhere in the expression tree.
 
@@ -128,16 +84,6 @@ def find_duplicate_terms(expr: Expr) -> list[str]:
 
     walk(expr)
     return [t for t, n in Counter(all_terms).items() if n > 1]
-
-
-def _branch_subsumes(e1: set[str], e2: set[str]) -> bool:
-    """True if every document matching e2 (AND of e2 terms) also matches e1 (AND of e1 terms).
-
-    This holds when every term in e1 has a broader-or-equal counterpart in e2.
-    """
-    if e1 == e2:
-        return False
-    return all(any(t1 == t2 or _is_subphrase(t1, t2) for t2 in e2) for t1 in e1)
 
 
 def find_subsumed_branches(expr: Expr) -> list[tuple[set[str], set[str]]]:

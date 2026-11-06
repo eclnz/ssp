@@ -1,16 +1,16 @@
-"""ANSI-colored structural query diffs."""
+"""Render colored structural differences between queries."""
 
 from __future__ import annotations
 
 import difflib
 from enum import StrEnum
 
-from ._tree import _collect_and_exprs, _collect_and_terms, _collect_or_branches
-from .ast import BinaryExpr, Expr, Op
-from .normalization import canonicalize
-from .parser import parse
-from .rendering import unparse
-from .simplification import simplify
+from ..syntax.ast import BinaryExpr, Expr, Op
+from ..syntax.parser import parse
+from ..syntax.serialization import unparse
+from ..syntax.traversal import _collect_and_exprs, _collect_and_terms, _collect_or_branches
+from ..transformations.normalization import canonicalize
+from ..transformations.simplification import simplify
 
 
 class Colour(StrEnum):

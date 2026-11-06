@@ -1,4 +1,4 @@
-"""Shared internal expression traversal and reconstruction helpers."""
+"""Shared internal tree traversal and reconstruction helpers."""
 
 from __future__ import annotations
 

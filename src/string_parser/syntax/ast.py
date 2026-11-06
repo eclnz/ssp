@@ -1,4 +1,4 @@
-"""Expression tree types for Boolean queries."""
+"""Operators and expression tree types."""
 
 from __future__ import annotations
 

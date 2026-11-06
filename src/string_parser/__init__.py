@@ -1,42 +1,52 @@
-"""Public API for Boolean search string parsing and analysis."""
+"""Stable public API for Boolean search string parsing and analysis."""
 
-from .analysis import (
+from .analysis.changes import (
     classify_change,
-    collect_terms,
-    combine,
+)
+from .analysis.lint import (
+    lint_string,
+)
+from .analysis.redundancy import (
     find_absorbed_branches,
     find_and_redundancies,
     find_duplicate_terms,
     find_subsumed_branches,
     find_subsumed_terms,
 )
-from .ast import (
+from .analysis.terms import (
+    collect_terms,
+)
+from .presentation.console import (
+    print_expr,
+)
+from .presentation.diff import (
+    Colour,
+    format_simplification_diff,
+    format_string_diff,
+)
+from .syntax.ast import (
     BinaryExpr,
     Expr,
     Op,
     Term,
     UnaryExpr,
 )
-from .diff import (
-    Colour,
-    format_simplification_diff,
-    format_string_diff,
+from .syntax.composition import (
+    combine,
 )
-from .normalization import (
+from .syntax.parser import (
+    ImplicitAndWarning,
+    parse,
+)
+from .syntax.serialization import (
+    unparse,
+)
+from .transformations.normalization import (
     canonical_form,
     canonicalize,
     canonically_equal,
 )
-from .parser import (
-    ImplicitAndWarning,
-    parse,
-)
-from .rendering import (
-    print_expr,
-    unparse,
-)
-from .simplification import (
-    lint_string,
+from .transformations.simplification import (
     simplify,
     suggest_simplification,
 )

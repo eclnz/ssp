@@ -1,4 +1,4 @@
-"""Tokenize query text into terms, operators, and parentheses."""
+"""Tokenize query text while preserving term spelling and quotes."""
 
 from __future__ import annotations
 
