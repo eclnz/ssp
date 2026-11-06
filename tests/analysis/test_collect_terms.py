@@ -1,7 +1,5 @@
-from string_parser import (
-    collect_terms,
-    parse,
-)
+from string_parser.analysis.terms import collect_terms
+from string_parser.syntax.parser import parse
 
 
 class TestCollectTerms:

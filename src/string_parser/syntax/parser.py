@@ -1,73 +1,73 @@
-"""Recursive-descent grammar with NOT > AND > OR precedence."""
+"""Recursive-descent grammar: NOT > AND > OR, with explicit errors."""
 
 from __future__ import annotations
 
 import warnings
 
 from .ast import BinaryExpr, Expr, Op, Term, UnaryExpr
-from .tokenizer import Paren, Token, tokenize
+from .errors import ParseError
+from .tokenizer import TokenKind, tokenize
 
 
 class ImplicitAndWarning(UserWarning):
-    """Raised when adjacent terms are implicitly AND-ed (no operator between them)."""
+    """Adjacent operands have been joined with an implicit AND."""
 
 
-def _parse(tokens: list[Token]) -> Expr:
+def parse(text: str) -> Expr:
+    """Parse a complete query or raise ParseError; retain implicit AND support."""
+    tokens = tokenize(text)
     pos = 0
 
-    def peek() -> Token | None:
-        return tokens[pos] if pos < len(tokens) else None
+    def kind() -> TokenKind | None:
+        return tokens[pos].kind if pos < len(tokens) else None
 
-    def consume() -> Token:
-        nonlocal pos
-        t = tokens[pos]
-        pos += 1
-        return t
+    def error(message: str) -> ParseError:
+        return ParseError(message, tokens[pos].start if pos < len(tokens) else len(text))
 
     def parse_or() -> Expr:
+        nonlocal pos
         left = parse_and()
-        while peek() is Op.OR:
-            consume()
+        while kind() is TokenKind.OR:
+            pos += 1
             left = BinaryExpr(Op.OR, left, parse_and())
         return left
 
     def parse_and() -> Expr:
+        nonlocal pos
         left = parse_not()
         while True:
-            if peek() is Op.AND:
-                consume()
-            elif isinstance(peek(), Term) or peek() in (Paren.OPEN, Op.NOT):
-                warnings.warn(
-                    "Adjacent terms without operator — treating as AND (PubMed behaviour)",
-                    ImplicitAndWarning,
-                    stacklevel=3,
-                )
+            if kind() is TokenKind.AND:
+                pos += 1
+            elif kind() in (TokenKind.TERM, TokenKind.OPEN, TokenKind.NOT):
+                warnings.warn("Adjacent operands treated as AND", ImplicitAndWarning, stacklevel=3)
             else:
                 break
             left = BinaryExpr(Op.AND, left, parse_not())
         return left
 
     def parse_not() -> Expr:
-        if peek() is Op.NOT:
-            consume()
+        nonlocal pos
+        if kind() is TokenKind.NOT:
+            pos += 1
             return UnaryExpr(Op.NOT, parse_not())
         return parse_atom()
 
     def parse_atom() -> Expr:
-        t = peek()
-        if t is Paren.OPEN:
-            consume()
-            expr = parse_or()
-            if peek() is Paren.CLOSE:
-                consume()
-            return expr
-        t = consume()
-        if isinstance(t, Term):
-            return t
-        raise ValueError(f"Unexpected token in expression: {t!r}")
+        nonlocal pos
+        if kind() is TokenKind.OPEN:
+            pos += 1
+            result = parse_or()
+            if kind() is not TokenKind.CLOSE:
+                raise error("Expected closing parenthesis")
+            pos += 1
+            return result
+        if kind() is not TokenKind.TERM:
+            raise error("Expected a term or parenthesized expression")
+        result = Term(tokens[pos].text)
+        pos += 1
+        return result
 
-    return parse_or()
-
-
-def parse(string: str) -> Expr:
-    return _parse(tokenize(string))
+    result = parse_or()
+    if pos != len(tokens):
+        raise error("Unexpected trailing token")
+    return result

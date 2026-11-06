@@ -1,13 +1,17 @@
-"""Classify added and removed terms between queries."""
+"""Term inventory comparison, explicitly separate from structural comparison."""
 
-from __future__ import annotations
+from typing import NamedTuple
 
-from ..syntax.parser import parse
+from ..syntax.ast import Expr
 from .terms import collect_terms
 
 
-def classify_change(old: str, new: str) -> tuple[set[str], set[str]]:
-    """Return (added_terms, removed_terms) between two search strings."""
-    old_terms = collect_terms(parse(old))
-    new_terms = collect_terms(parse(new))
-    return new_terms - old_terms, old_terms - new_terms
+class TermChanges(NamedTuple):
+    added: set[str]
+    removed: set[str]
+
+
+def compare_terms(old: Expr, new: Expr) -> TermChanges:
+    """Compare inventories only; operators and negation do not affect this report."""
+    before, after = collect_terms(old), collect_terms(new)
+    return TermChanges(after - before, before - after)

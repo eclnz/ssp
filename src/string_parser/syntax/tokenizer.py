@@ -1,36 +1,46 @@
-"""Tokenize query text while preserving term spelling and quotes."""
-
-from __future__ import annotations
+"""Positioned lexical tokens, independent of expression tree nodes."""
 
 import re
+from dataclasses import dataclass
 from enum import Enum
 
-from .ast import Op, Term
-
-_TOKEN = re.compile(r'"[^"]*"|\b(?:AND|OR|NOT)\b|[()]|[^\s()]+')
+from .errors import ParseError
 
 
-class Paren(Enum):
+class TokenKind(Enum):
+    TERM = "TERM"
+    AND = "AND"
+    OR = "OR"
+    NOT = "NOT"
     OPEN = "("
     CLOSE = ")"
 
 
-Token = Term | Op | Paren
+@dataclass(frozen=True)
+class Token:
+    kind: TokenKind
+    text: str
+    start: int
+    end: int
 
 
-def tokenize(string: str) -> list[Token]:
-    tokens: list[Token] = []
-    for m in _TOKEN.findall(string):
-        if m == "AND":
-            tokens.append(Op.AND)
-        elif m == "OR":
-            tokens.append(Op.OR)
-        elif m == "NOT":
-            tokens.append(Op.NOT)
-        elif m == "(":
-            tokens.append(Paren.OPEN)
-        elif m == ")":
-            tokens.append(Paren.CLOSE)
-        else:
-            tokens.append(Term(m))
-    return tokens
+# A field suffix remains attached to its quoted phrase. Other field syntax is opaque.
+_TOKEN = re.compile(r'"[^"\n]*"(?:\[[^\]\n]+\])?|[()]|[^"\s()]+')
+
+
+def tokenize(text: str) -> list[Token]:
+    """Preserve lexemes and offsets; reject unmatched quotes."""
+    result: list[Token] = []
+    pos = 0
+    while pos < len(text):
+        if text[pos].isspace():
+            pos += 1
+            continue
+        match = _TOKEN.match(text, pos)
+        if match is None:
+            raise ParseError("Unterminated quoted phrase", pos)
+        value = match.group()
+        kind = TokenKind(value) if value in {"AND", "OR", "NOT", "(", ")"} else TokenKind.TERM
+        result.append(Token(kind, value, pos, match.end()))
+        pos = match.end()
+    return result
