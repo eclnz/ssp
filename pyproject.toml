@@ -1,0 +1,23 @@
+[project]
+name = "ssp"
+version = "0.1.0"
+description = "Parse, compare, lint, and simplify Boolean literature search strings"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/string_parser"]
+
+[dependency-groups]
+dev = ["pytest>=9.0.2", "ruff>=0.15.4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
