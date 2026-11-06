@@ -10,7 +10,7 @@ Evidence tests require that a reported removal has a surviving witness, and that
 
 ## Explicit API and grammar choices
 
-The documented grammar chooses uppercase operators, NOT > AND > OR precedence, balanced parentheses, and double-quoted opaque terms. Raw terms retain case and quoting. Parsing consumes the full input and reports syntax errors with character offsets. Implicit AND requires explicit opt-in.
+The documented grammar chooses uppercase operators, NOT > AND > OR precedence, balanced parentheses, and opaque terms composed of contiguous quoted/unquoted fragments. Raw terms retain case and quoting. Parsing consumes the full input and reports syntax errors with character offsets. Implicit AND requires explicit opt-in.
 
 These are chosen contracts, not universal search-engine rules. A deliberate grammar/API change should update these tests after the contract is changed. Structural examples test the grammar; they do not claim a database interprets the same query identically.
 

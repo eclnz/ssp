@@ -32,7 +32,8 @@ class Token:
     end: int
 
 
-_TOKEN = re.compile(r'"[^"\n]*"(?:\[[^\]\n]+\])?|[()]|[^"\s()]+')
+# A term is contiguous quoted/unquoted text; punctuation has no database meaning.
+_TOKEN = re.compile(r'[()]|(?:"[^"\n]*"|[^"\s()])+')
 
 
 def tokenize(text: str) -> list[Token]:

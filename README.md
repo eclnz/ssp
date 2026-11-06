@@ -24,7 +24,7 @@ text = unparse(simplify(query))
 Core operations accept immutable expression trees. There is no parallel string-wrapper API.
 
 - Grammar: uppercase AND/OR/NOT, precedence NOT > AND > OR, parentheses, and quoted opaque terms. Parsing consumes all input or raises `ParseError` with a zero-based character offset.
-- Terms retain case and quoting. `"high flow"[tiab]` is an opaque lexeme, not an interpreted database expression. Binary AST nodes require AND/OR; unary nodes require NOT.
+- Terms retain case and quoting. Contiguous quoted/unquoted fragments such as `"two words":label` form an opaque lexeme; punctuation has no database meaning. Binary AST nodes require AND/OR; unary nodes require NOT.
 - Operators are required unless `parse(text, allow_implicit_and=True)` is explicitly selected. That convention emits `ImplicitAndWarning`.
 - `compare_terms` compares raw inventories. Optional normalization requires `key=...`; this is not a meaning comparison.
 - `canonicalize` sorts associative operands without interpreting terms. `simplify` applies conservative absorption/duplicate rules. Neither is a complete theorem prover.

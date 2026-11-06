@@ -7,11 +7,9 @@ from string_parser.syntax.expressions import rebuild
 from string_parser.syntax.tokens import TokenKind, tokenize
 
 
-def test_precedence_and_quoted_field_suffix():
-    expr = parse('A OR B AND NOT "high flow"[tiab]')
-    assert expr == BinaryExpr(
-        Op.OR, Term("A"), BinaryExpr(Op.AND, Term("B"), UnaryExpr(Op.NOT, Term('"high flow"[tiab]')))
-    )
+def test_precedence_and_quoted_terms():
+    expr = parse('A OR B AND NOT "two words"')
+    assert expr == BinaryExpr(Op.OR, Term("A"), BinaryExpr(Op.AND, Term("B"), UnaryExpr(Op.NOT, Term('"two words"'))))
     assert parse(unparse(expr)) == expr
 
 
@@ -19,9 +17,10 @@ def test_error_and_token_offsets():
     with pytest.raises(ParseError) as error:
         parse("A AND")
     assert error.value.position == 5
-    token = tokenize('  "high flow"[tiab]')[0]
+    text = '  "two words"'
+    token = tokenize(text)[0]
     assert token.kind is TokenKind.TERM
-    assert (token.start, token.end) == (2, 19)
+    assert (token.start, token.end) == (2, len(text))
 
 
 def test_ast_is_immutable_and_rejects_wrong_operator_arity():
@@ -34,3 +33,9 @@ def test_ast_is_immutable_and_rejects_wrong_operator_arity():
         UnaryExpr(Op.OR, term)
     with pytest.raises(ValueError):
         rebuild(Op.AND, [])
+
+
+@pytest.mark.parametrize("lexeme", ['"two words":label', 'prefix"two words"', '"two words"{label}'])
+def test_contiguous_quoted_and_unquoted_fragments_are_opaque_terms(lexeme):
+    assert parse(lexeme) == Term(lexeme)
+    assert unparse(parse(lexeme)) == lexeme

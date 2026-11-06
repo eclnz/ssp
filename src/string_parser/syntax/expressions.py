@@ -85,7 +85,7 @@ def structural_key(expr: Expr) -> tuple:
 
 
 def unparse(expr: Expr) -> str:
-    """Reconstruct a PubMed search string from an expression tree."""
+    """Serialize an expression tree as a Boolean query."""
     if isinstance(expr, Term):
         return expr.value  # preserves original quoting
     if isinstance(expr, UnaryExpr):
