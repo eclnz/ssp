@@ -77,8 +77,8 @@ def _align(old: Expr, new: Expr) -> ExpressionDiff:
     return ExpressionDiff(_join(a, op), _join(b, op))
 
 
-def compare_expressions(old: Expr, new: Expr) -> ExpressionDiff | None:
-    """Compare structure, ignoring AND/OR operand order; preserve original text in output."""
-    if structural_key(old) == structural_key(new):
+def compare_expressions(old: Expr, new: Expr, *, ignore_operand_order: bool = False) -> ExpressionDiff | None:
+    """Align reconstructed query text; suppress operand reorderings only on request."""
+    if old == new or (ignore_operand_order and structural_key(old) == structural_key(new)):
         return None
     return _align(old, new)

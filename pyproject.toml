@@ -1,7 +1,7 @@
 [project]
 name = "ssp"
-version = "0.4.2"
-description = "Parse, compare, and simplify Boolean query expressions"
+version = "0.5.0"
+description = "Compare and merge search-string revisions"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []

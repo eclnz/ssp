@@ -6,7 +6,7 @@ Tests are evidence for an agreed contract, not a substitute for deciding it. The
 
 The independent Boolean evaluator in `transformations/test_boolean_contract.py` defines AND, OR, and NOT over arbitrary independent symbols. It checks simplification, canonicalization, and parse/serialize round trips across every assignment for 1,878 shallow expression trees and 512 deeper seeded samples. It does not call production implication/matching logic to obtain expected values. These checks guarantee meaning preservation for the exercised cases, not completeness or a particular normal form.
 
-Evidence tests require that a reported removal has a surviving witness, and that diagnostics and rewrites use the same decision. They do not require one particular traversal, association, representative ordering, or exhaustive theorem proving.
+Simplification evidence tests require surviving witnesses. Revision tests replay edits, compare effects to an independent oracle, and validate witnesses. Merge tests require both sides' accepted occurrence edits to survive, with explicit conflicts for ambiguous layouts. They do not require one particular traversal, association, representative ordering, or exhaustive theorem proving.
 
 ## Explicit API and grammar choices
 
@@ -14,7 +14,7 @@ The documented grammar chooses uppercase operators, NOT > AND > OR precedence, b
 
 These are chosen contracts, not universal search-engine rules. A deliberate grammar/API change should update these tests after the contract is changed. Structural examples test the grammar; they do not claim a database interprets the same query identically.
 
-API tests cover raw inventories with a caller-supplied normalization key, immutable ASTs, matcher substitution, validated diagnostic variants, and style-independent rendering. They avoid exact message snapshots, canonical branch ordering, and parentheses/ANSI-span placement.
+API tests cover raw inventories with a caller-supplied normalization key, immutable ASTs, matcher substitution in simplification, structured revision edits, conservative merge conflicts, and style-independent rendering. They avoid exact message snapshots, canonical branch ordering, and parentheses/ANSI-span placement.
 
 ## Optional conventions
 
@@ -23,3 +23,10 @@ API tests cover raw inventories with a caller-supplied normalization key, immuta
 ## Retired inherited assumptions
 
 Removed tests and compatibility-only reporting helpers that required lowercase tuple/set projections, specialized cross-query inventory reports, exact formatted prefixes, object identity from composition, or numerous restatements of phrase-containment examples. Useful absorption scenarios remain covered by generic Boolean laws, regression cases, and explicit opt-in convention tests. Test count is not a quality target.
+
+
+## Revision comparison and merge
+
+The revision contract records structural edits even for logically equivalent reorderings. Broader/narrower/mixed labels are determined by Boolean effects, never counts of added or removed terms. Semantic comparison has an explicit enumeration budget and reports unknown honestly. Supplied assumptions are tested separately from independent-symbol behavior.
+
+Three-way merging is occurrence-based and conservative. Tests cover fast forwards, identical edits, disjoint subtree edits, overlapping replacements/operators, ambiguous reorderings, and preservation of both sides' accepted edits. These are required merge guarantees, not a requirement to resolve every valid merge automatically. General duplicate-term diagnostics and the umbrella analysis API have been retired.

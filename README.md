@@ -1,6 +1,6 @@
 # ssp
 
-A dependency-free Python library for generic Boolean query parsing, analysis, and rewriting. Python 3.11+. Extracted from [litdb](https://github.com/eclnz/litdb).
+Search-string comparison and merge primitives for building version-control tools. Python 3.11+, with no runtime dependencies. SSP does not store revisions or manage repositories.
 
 ```bash
 uv sync --group dev
@@ -9,82 +9,83 @@ uv run ruff check .
 uv build
 ```
 
-## Expression API
+## Compare revisions
 
 ```python
-from string_parser import analyze, canonicalize, compare_terms, parse, simplify, unparse
+from string_parser import Effect, compare_revisions, parse
 
-query = parse('(A AND NOT B) OR A')
-assert simplify(query) == parse('A')
-assert compare_terms(parse('A'), parse('a')).added == {'a'}
-findings = analyze(query)
-text = unparse(simplify(query))
+change = compare_revisions(parse("A AND B"), parse("A OR B"))
+assert change.effect is Effect.BROADER
+assert not change.terms.added and not change.terms.removed
+assert change.edits[0].path == ("op",)
+assert dict(change.added_witness)  # a hypothetical term-match assignment explaining the expansion
 ```
 
-Core operations accept immutable expression trees. There is no parallel string-wrapper API.
+`RevisionComparison` contains the before/after trees, structured edits, raw inventory changes, Boolean effect, optional added/removed witnesses, assumptions, and an explanation when the effect is unknown. Paths use `left`, `right`, `operand`, or `op` to address the supplied before tree. Whole-subtree edits stop at their replacement boundary and can be replayed without guessing term identity.
 
-- Grammar: uppercase AND/OR/NOT, precedence NOT > AND > OR, parentheses, and quoted opaque terms. Parsing consumes all input or raises `ParseError` with a zero-based character offset.
-- Terms retain case and quoting. Contiguous quoted/unquoted fragments such as `"two words":label` form an opaque lexeme; punctuation has no database meaning. Binary AST nodes require AND/OR; unary nodes require NOT.
-- Operators are required unless `parse(text, allow_implicit_and=True)` is explicitly selected. That convention emits `ImplicitAndWarning`.
-- `compare_terms` compares raw inventories. Optional normalization requires `key=...`; this is not a meaning comparison.
-- `canonicalize` sorts associative operands without interpreting terms. `simplify` applies conservative absorption/duplicate rules. Neither is a complete theorem prover.
-- `analyze` and `simplify` share redundancy proofs. Evidence identifies removable operands and surviving witnesses. Analysis describes the supplied tree; later rewrite stages can expose more findings.
-- Diagnostics are validated `DuplicateTerm` and `RedundantOperandDiagnostic` variants. Occurrence reports are not automatic deletion advice. An optional `matching_label` is data, not a matcher dependency.
-- `compare_expressions` produces an unstyled structural diff. `presentation.render_diff(plan, color=False)` renders plain text; the default adds ANSI styling. Output reconstructs queries rather than preserving source formatting.
+Edits distinguish term replacement, operator changes, adding/removing negation or a branch, operand rearrangement/reassociation, and other subtree replacements. Reorderings stay visible even when their Boolean effect is equivalent. `compare_expressions` provides an optional reconstructed-text diff; its `ignore_operand_order` option is false by default. `presentation.render_diff` renders that plan with optional ANSI styling.
 
-## Optional conventions
+## Boolean effect and limits
+
+- `EQUIVALENT`: no assignments gain or lose a match.
+- `BROADER`: some assignments gain a match and none lose one.
+- `NARROWER`: some lose a match and none gain one.
+- `MIXED`: there are both gains and losses.
+- `UNKNOWN`: the budget was exceeded or assumptions admit no assignments.
+
+Terms are independent raw Boolean symbols, not database-resolved searches. A witness describes hypothetical term matches, not a retrieved record or an observed result-count change.
+
+Effect classification uses bounded exhaustive evaluation. The default `max_assignments=4096` supports up to 12 distinct symbols across the two revisions and assumptions; larger comparisons return `UNKNOWN` before enumerating. Callers may explicitly increase the budget, with exponential cost. Identical or associatively reordered expressions without assumptions can be proven equivalent directly at any symbol count. The existing implication helper remains a conservative internal aid for simplification, not a semantic classification oracle.
+
+Relationships between terms can be supplied explicitly as an assumption expression:
 
 ```python
-from string_parser.conventions.lexical import LEXICAL_PHRASE, lexical_term_key
-
-assert simplify(parse('flow OR "high flow"')) == parse('flow OR "high flow"')
-assert simplify(parse('flow OR "high flow"'), matcher=LEXICAL_PHRASE) == parse('flow')
-assert compare_terms(parse('A'), parse('a'), key=lexical_term_key) == (set(), set())
+change = compare_revisions(parse("A"), parse("B"), assumptions=parse("NOT A OR B"))
+assert change.effect is Effect.BROADER  # assuming A implies B
 ```
 
-Phrase containment and casefolded quote-stripped inventories are heuristics, not Boolean laws or verified database semantics. Field-tagged and wildcard terms are compared literally by the optional matcher. Core modules do not import conventions.
+## Three-way merge
 
-Custom matchers implement only `TermMatcher.covers_term(broader, narrower) -> bool`. True must be sound coverage; false may mean unknown. Coverage must be reflexive and transitive. No enum ancestry, normalization key, or display metadata is required.
+```python
+from string_parser import merge_revisions
 
-## Structure and tests
-
-```text
-string_parser/
-├── __init__.py
-├── transformations.py      # canonicalization and simplification
-├── presentation.py         # diagnostic and diff rendering
-├── syntax/
-│   ├── __init__.py
-│   ├── expressions.py      # AST, traversal, composition, serialization
-│   ├── tokens.py           # tokenization, tokens, shared parse errors
-│   └── parser.py           # Boolean grammar
-├── analysis/
-│   ├── __init__.py
-│   ├── terms.py            # inventory collection and comparison
-│   ├── matching.py         # matching contract and implication
-│   ├── redundancy.py       # shared evidence, findings, analysis
-│   └── diff.py             # structural comparison
-└── conventions/
-    ├── __init__.py
-    └── lexical.py          # explicit optional heuristics
+result = merge_revisions(parse("A AND B"), parse("C AND B"), parse("A AND D"))
+assert result.expression == parse("C AND D")
+assert not result.conflicts
 ```
 
-Modules group code that shares a responsibility and changes together. The parser remains separate from tokenization because the grammar is a real boundary; small inventory, transformation, and rendering operations are consolidated instead of receiving one file each.
+The merge supports unchanged sides, identical edits, and independent edits to distinct subtrees with stable layout. Accepted base-to-result edits are returned in `changes`. It does not simplify or normalize a side before merging.
 
-[tests/README.md](tests/README.md) distinguishes semantic laws from chosen API contracts and optional conventions. Independent truth tables check meaning preservation across exhaustive shallow and seeded deeper samples. Tests do not prescribe an algorithm, branch order, message wording, or ANSI span arrangement. The original source and tests are reference material, not the specification.
+Competing edits at one occurrence, ancestor replacement versus descendant edits, operator changes alongside concurrent child edits, and ambiguous reorderings return contextual `MergeConflict` values. Conflicts include the path, base/left/right expressions, and reason. A conflicting merge returns `expression=None` and no accepted changes, never a partial executable query. The policy is deliberately conservative: some reconcilable changes still need caller review. There is no automatic union of two competing branch additions.
 
-Version 0.4 removes the legacy string facade, specialized report adapters, AST printer, and implicit lexical defaults.
+## Core and optional conventions
+
+The generic core parses uppercase AND/OR/NOT with precedence NOT > AND > OR, balanced parentheses, and opaque quoted/unquoted term fragments. Raw spelling, case, and quoting remain significant. `ParseError` reports a zero-based character offset. Implicit AND requires `allow_implicit_and=True` and emits `ImplicitAndWarning`.
+
+AST nodes are immutable. `unparse`, `canonicalize`, and `simplify` operate on expressions. Simplification and canonicalization are separate, explicit operations; comparison and merge never silently apply them. `collect_terms`/`compare_terms` support an explicit inventory key but inventory changes alone do not determine match-set effects.
+
+Optional lexical conventions remain in `conventions/`. A `TermMatcher` can be supplied to simplification; semantic revision comparison uses explicit assumption expressions instead. The core does not import optional conventions. There is no general `analyze()` or duplicate-term diagnostic service.
+
+## Structure
+
+- `syntax/`: expressions, tokens, grammar.
+- `analysis/`: inventory and structural comparison, revision effects, internal matching/redundancy proofs.
+- `merging.py`: conservative three-way merge and conflicts.
+- `transformations.py`: explicit canonicalization and simplification.
+- `presentation.py`: reconstructed-text diff rendering.
+- `conventions/`: optional lexical heuristics.
+
+[tests/README.md](tests/README.md) describes the contracts and independent Boolean-oracle checks. Version 0.5 replaces the general diagnostic interface with revision comparison and merge operations. No compatibility with a consuming application's historical assumptions is imposed.
 
 ## Graphify
 
-Install once with `uv tool install graphifyy`, then:
-
 ```bash
+uv tool install graphifyy
 graphify extract . --code-only
 graphify export html
 graphify hook install
-graphify path 'simplify' 'find_redundant_operands'
-graphify path 'analyze' 'find_redundant_operands'
+graphify path 'compare_revisions' 'structural_edits'
+graphify path 'merge_revisions' 'structural_edits'
 ```
 
-Graphs are local and ignored; no LLM API key is needed. Git hooks refresh the graph. Use connectivity to identify review candidates, then check their contracts and callers.
+Generated graphs are local and ignored; no LLM API key is needed. Use graph relationships to identify review candidates, then verify their contracts and callers.
